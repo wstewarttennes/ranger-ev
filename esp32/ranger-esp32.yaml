@@ -1,0 +1,177 @@
+# Ranger EV — always-on ESP32 gatekeeper
+# ---------------------------------------
+# Two jobs:
+#   1. REMOTE POWER: pulse the truck's on/off button (momentary toggle) from HA,
+#      with a feedback wire so it never gets out of sync with real state.
+#   2. LIGHTWEIGHT CAN: passively read the Thunderstruck battery bus (250k) so
+#      SoC / pack V / I / temp land in HA whenever the bus is awake (drive OR
+#      charge), no Pi boot needed.
+#
+# Flash:  esphome run ranger-esp32.yaml   (needs secrets.yaml, see README.md)
+# Powered from CONSTANT 12V via a buck -> 5V into VIN. ~40mA idle.
+
+esphome:
+  name: ranger-esp32
+  friendly_name: Ranger ESP32
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+logger:
+
+# Native HA API (no MQTT needed for these entities — they show up directly).
+api:
+  encryption:
+    key: !secret api_key
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  # optional static IP / fast_connect help if the truck wifi is flaky
+  fast_connect: true
+
+# ---------------------------------------------------------------------------
+# CAN — Thunderstruck battery bus @ 250k.  ESP32 is a MIDDLE node: NO terminator
+# on the transceiver (remove the 120R jumper/resistor on the SN65HVD230 board).
+# We only listen; we never transmit.
+# ---------------------------------------------------------------------------
+canbus:
+  - platform: esp32_can
+    tx_pin: GPIO5
+    rx_pin: GPIO4
+    can_id: 0
+    bit_rate: 250kbps
+    on_frame:
+      # 0x355 MCU_BMS_SOC — byte0 = SoC %
+      - can_id: 0x355
+        then:
+          - lambda: |-
+              if (x.size() >= 1) id(soc).publish_state(x[0]);
+              id(bus_seen)->publish_state(true);
+      # 0x356 MCU_BMS_STATUS — V(0..1 u16 x0.1), I(2..3 s16 x0.1), T(4..5 s16 x0.1), LE
+      # PACK_CURRENT sign: positive = discharge, negative = charge (per DBC).
+      - can_id: 0x356
+        then:
+          - lambda: |-
+              if (x.size() >= 6) {
+                float v = (uint16_t)(x[0] | (x[1] << 8)) * 0.1f;
+                float i = (int16_t)(x[2] | (x[3] << 8)) * 0.1f;
+                float t = (int16_t)(x[4] | (x[5] << 8)) * 0.1f;
+                id(pack_voltage).publish_state(v);
+                id(pack_current).publish_state(i);
+                id(pack_temp).publish_state(t);
+                id(pack_power).publish_state(v * i);        // W, +discharge / -charge
+                id(charging)->publish_state(i < -0.5f);     // >0.5A into pack
+              }
+              id(bus_seen)->publish_state(true);
+
+# ---------------------------------------------------------------------------
+# Remote power: template switch mirrors real state, pulses button only when needed
+# ---------------------------------------------------------------------------
+# Internal GPIO that closes the opto-relay across the physical button contacts.
+switch:
+  - platform: gpio
+    id: btn_relay
+    pin: GPIO23
+    internal: true
+    restore_mode: ALWAYS_OFF
+
+  - platform: template
+    name: "Ranger Power"
+    id: ranger_power
+    lambda: 'return id(system_on).state;'
+    turn_on_action:
+      - if:
+          condition:
+            binary_sensor.is_off: system_on
+          then:
+            - script.execute: press_button
+    turn_off_action:
+      - if:
+          condition:
+            binary_sensor.is_on: system_on
+          then:
+            - script.execute: press_button
+
+script:
+  - id: press_button
+    then:
+      - switch.turn_on: btn_relay
+      - delay: 400ms          # ~one button press
+      - switch.turn_off: btn_relay
+
+# ---------------------------------------------------------------------------
+# Feedback: is the system actually on?  Opto pulls GPIO25 LOW when switched-12V
+# is present (inverted -> ON = true).  Internal pullup, so no external resistor.
+# ---------------------------------------------------------------------------
+binary_sensor:
+  - platform: gpio
+    id: system_on
+    name: "Ranger System On"
+    pin:
+      number: GPIO25
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+    filters:
+      - delayed_on: 200ms
+      - delayed_off: 200ms
+
+  # Bus liveness — flips off if no frame for 5s (truck asleep).
+  - platform: template
+    id: bus_seen
+    name: "Ranger CAN Bus Live"
+    filters:
+      - delayed_off: 5s
+
+  # Charging — set from the 0x356 lambda (pack current < -0.5A into pack).
+  - platform: template
+    id: charging
+    name: "Ranger Charging"
+    device_class: battery_charging
+    filters:
+      - delayed_off: 10s      # ride through brief current dips
+
+sensor:
+  - platform: template
+    id: soc
+    name: "Ranger SoC"
+    unit_of_measurement: "%"
+    device_class: battery
+    state_class: measurement
+    accuracy_decimals: 0
+  - platform: template
+    id: pack_voltage
+    name: "Ranger Pack Voltage"
+    unit_of_measurement: "V"
+    device_class: voltage
+    state_class: measurement
+    accuracy_decimals: 1
+  - platform: template
+    id: pack_current
+    name: "Ranger Pack Current"
+    unit_of_measurement: "A"
+    device_class: current
+    state_class: measurement
+    accuracy_decimals: 1
+  - platform: template
+    id: pack_temp
+    name: "Ranger Pack Temp"
+    unit_of_measurement: "°C"
+    device_class: temperature
+    state_class: measurement
+    accuracy_decimals: 1
+  - platform: template
+    id: pack_power
+    name: "Ranger Pack Power"
+    unit_of_measurement: "W"
+    device_class: power
+    state_class: measurement
+    accuracy_decimals: 0

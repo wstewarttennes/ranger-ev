@@ -1,0 +1,6 @@
+# Ranger EV CAN dashboard — Python deps
+# Install on the Pi:  python3 -m venv .venv && . .venv/bin/activate && pip install -r requirements.txt
+python-can==4.3.1        # SocketCAN interface + message objects
+fastapi==0.111.0         # web server + WebSocket
+uvicorn[standard]==0.30.1
+pyyaml==6.0.1            # human-editable CAN message map

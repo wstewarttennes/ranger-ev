@@ -1,0 +1,19 @@
+# ranger-dashboard has its own git repo + GitHub remote — tracked separately.
+ranger-dashboard/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# Secrets (nested .gitignores also cover esp32/secrets.yaml)
+.env
+*.key
+
+# OS
+.DS_Store

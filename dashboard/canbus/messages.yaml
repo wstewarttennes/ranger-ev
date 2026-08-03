@@ -1,0 +1,119 @@
+# =============================================================================
+# Ranger EV — CAN message map
+# =============================================================================
+# This file is the single source of truth for how raw CAN frames are decoded.
+# It is DATA, not code — edit it here as you confirm IDs against the real bus.
+#
+# WORKFLOW:
+#   1. Run `python -m capture.analyze can0` (or on a .log from candump) to see
+#      which IDs are actually present, their rate, and which bytes change.
+#   2. For each message below, set `verified: true` once you've confirmed the
+#      ID + byte layout on YOUR bus, and fix scale/offset as needed.
+#   3. Anything with `verified: false` is a HYPOTHESIS from the manuals / known
+#      protocols — the dashboard will still show it, but treat the value with
+#      suspicion until confirmed. The UI dims unverified signals.
+#
+# SIGNAL FIELDS:
+#   start   : first byte index (0-based)
+#   length  : number of bytes
+#   endian  : big | little      (Elcon/Thunderstruck are mostly big-endian)
+#   signed  : true | false
+#   scale   : raw * scale + offset  -> engineering value
+#   offset  : added after scaling
+#   unit    : label shown in UI
+#   bit     : (for flags) bit index within a single byte at `start`
+#
+# NOTE ON SCOPE: Motor RPM / throttle / motor temperature live on the X1's
+# **LIN bus**, NOT this CAN bus (see build notes). This map covers the
+# Thunderstruck BMS/MCU + TSM2500 charger only. Motor panel in the UI is
+# fed by simulator/LIN-future, marked accordingly.
+# =============================================================================
+
+meta:
+  bus: can0
+  notes: "IDs default to Thunderstruck CANopen (CAN1) + Elcon-protocol charger. Confirm on bus."
+
+messages:
+
+  # ---------------------------------------------------------------------------
+  # TSM2500 CHARGER  (Thunderstruck TSM2500 is an Elcon/TC-based charger)
+  # Elcon protocol: charger BROADCASTS status on 0x18FF50E5 (29-bit extended).
+  # BMS/MCU sends the current+voltage command on 0x1806E5F4.
+  # HIGH CONFIDENCE this matches, but VERIFY the ID on your bus.
+  # ---------------------------------------------------------------------------
+  charger_status:
+    id: 0x18FF50E5
+    extended: true
+    verified: false
+    source: "Elcon/TC charger protocol (TSM2500 family). Verify on bus."
+    signals:
+      charge_voltage: { start: 0, length: 2, endian: big, signed: false, scale: 0.1, offset: 0, unit: V }
+      charge_current: { start: 2, length: 2, endian: big, signed: false, scale: 0.1, offset: 0, unit: A }
+      # byte 4 = status flags (bit set = FAULT)
+      flag_hardware:  { start: 4, length: 1, bit: 0 }
+      flag_overtemp:  { start: 4, length: 1, bit: 1 }
+      flag_input_v:   { start: 4, length: 1, bit: 2 }   # AC input voltage wrong
+      flag_no_battery:{ start: 4, length: 1, bit: 3 }   # battery not detected / reversed
+      flag_comm_timeout:{ start: 4, length: 1, bit: 4 } # CAN comms lost
+
+  # ---------------------------------------------------------------------------
+  # THUNDERSTRUCK MCU — pack summary
+  # The MCU broadcasts pack V / current / SOC for the display + gauges.
+  # Exact IDs depend on which CAN service is enabled (canopen / sh_* / 3100r).
+  # Placeholder IDs below MATCH the simulator so the UI works today; replace
+  # with the real IDs from your candump. See README "Confirming MCU IDs".
+  # ---------------------------------------------------------------------------
+  mcu_pack:
+    id: 0x300
+    extended: false
+    verified: false
+    source: "Placeholder — confirm MCU pack broadcast ID on bus (canopen TPDO or sh_*)."
+    signals:
+      pack_voltage: { start: 0, length: 2, endian: big, signed: false, scale: 0.1, offset: 0, unit: V }
+      pack_current: { start: 2, length: 2, endian: big, signed: true,  scale: 0.1, offset: 0, unit: A }  # + discharge / - charge
+      soc:          { start: 4, length: 1, endian: big, signed: false, scale: 1.0, offset: 0, unit: "%" }
+
+  mcu_cells:
+    id: 0x301
+    extended: false
+    verified: false
+    source: "Placeholder — MCU cell min/max/avg broadcast."
+    signals:
+      cell_min_mv:  { start: 0, length: 2, endian: big, signed: false, scale: 1.0, offset: 0, unit: mV }
+      cell_max_mv:  { start: 2, length: 2, endian: big, signed: false, scale: 1.0, offset: 0, unit: mV }
+      cell_avg_mv:  { start: 4, length: 2, endian: big, signed: false, scale: 1.0, offset: 0, unit: mV }
+
+  mcu_temps:
+    id: 0x302
+    extended: false
+    verified: false
+    source: "Placeholder — MCU pack temperature min/max."
+    signals:
+      temp_min:     { start: 0, length: 1, endian: big, signed: true, scale: 1.0, offset: 0, unit: "C" }
+      temp_max:     { start: 1, length: 1, endian: big, signed: true, scale: 1.0, offset: 0, unit: "C" }
+
+  # ---------------------------------------------------------------------------
+  # THUNDERSTRUCK MCU — status / fault flags
+  # These mirror the MCU condition flags (HVC/LVC/HIPACK/... + charge state).
+  # Wire these to the same conditions you used in your OUT functions.
+  # ---------------------------------------------------------------------------
+  mcu_status:
+    id: 0x303
+    extended: false
+    verified: false
+    source: "Placeholder — MCU status/condition flags + drive/charge state."
+    signals:
+      # byte 0 = fault bits (see MCU manual 'Conditions' / FAULT shortcut)
+      flag_hvc:      { start: 0, length: 1, bit: 0 }   # high cell voltage
+      flag_lvc:      { start: 0, length: 1, bit: 1 }   # low cell voltage
+      flag_hipack:   { start: 0, length: 1, bit: 2 }
+      flag_lowpack:  { start: 0, length: 1, bit: 3 }
+      flag_hitemp:   { start: 0, length: 1, bit: 4 }
+      flag_lowtemp:  { start: 0, length: 1, bit: 5 }
+      flag_notlocked:{ start: 0, length: 1, bit: 6 }
+      flag_hwfault:  { start: 0, length: 1, bit: 7 }
+      # byte 1 = state bits
+      state_bms_ok:  { start: 1, length: 1, bit: 0 }   # BMS-OK -> X1 interlock (OUT5)
+      state_charging:{ start: 1, length: 1, bit: 1 }
+      state_plugged: { start: 1, length: 1, bit: 2 }   # J1772 proximity present
+      state_pilot:   { start: 1, length: 1, bit: 3 }   # pilot / AC available
