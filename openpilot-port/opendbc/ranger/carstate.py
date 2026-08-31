@@ -35,6 +35,12 @@ class CarState(CarStateBase):
   # --- signature-agnostic core: give it the parsed Hyper9 CANParser ---
   def _parse(self, ret: structs.CarState, cp: CANParser) -> structs.CarState:
     # Speed -------------------------------------------------------------------
+    # ⚠️ GEAR-DEPENDENT (fix before phase 2 / longitudinal). The X1's
+    # VEHICLE_SPEED is motor_rpm x a fixed internal ratio, so it's only correct
+    # in ONE gear on this manual gearbox — measured 2026-08, ~right in 3rd,
+    # reads ~half in 4th. For a trustworthy vEgo, replace this with a
+    # gear-independent source (comma GPS, or a tailshaft VSS) and derive the
+    # forward gear from motor_rpm / true_speed. See spec/ranger_carstate_spec.md.
     v_kmh = abs(cp.vl["HYPER9_STATUS"]["VEHICLE_SPEED"])
     v_ego_raw = v_kmh / 3.6  # m/s
     # openpilot wants per-wheel; we have one number. Feed all four the same.

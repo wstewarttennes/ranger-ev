@@ -44,6 +44,34 @@ In the port these become openpilot bus indices: **Hyper9 = bus 0**, **MCU = bus 
 
 ---
 
+## ⚠️ Speed & gear — the gear-independence problem (fix before phase 2)
+
+The `vEgo` above is derived from the X1's `VEHICLE_SPEED`, which is itself just
+`motor_rpm × a fixed internal ratio`. On this **manual gearbox (M5OD-R1)** that
+ratio changes every gear, so a single-constant speed is **only correct in ONE
+gear**. Measured 2026-08: dashboard/X1 speed is ~right in **3rd** and reads
+**~half in 4th**. Read-only phase 1 tolerates this; **longitudinal (phase 2)
+must not** — a wrong `vEgo` breaks speed control.
+
+**Root cause:** motor rpm alone can't yield road speed without knowing the gear,
+and the gear isn't on the bus. Don't try to detect the gear to fix the speed —
+measure speed **downstream of the gearbox** instead:
+
+| source | notes |
+|---|---|
+| **comma GPS** | already on the device, no new wiring; bridges over WiFi (webrtcd). Laggy at crawl, accurate cruising. Easiest first. |
+| **tailshaft VSS** | sensor at the M5OD output (factory speedo location). True road speed, good at low speed. The "proper" fix. |
+
+With a gear-independent true speed, everything falls out:
+- `vEgo` = the true speed, directly (gear-independent).
+- **forward gear** (display / logging only) = `round-to-nearest( motor_rpm / true_speed )` against the known gear ratios. openpilot itself never needs 1st–5th; it only needs vEgo + shifter D/R/N (already from signed `MOTOR_RPM`).
+
+**Action:** before wiring phase-2 longitudinal, swap `carstate.py`'s `vEgo`
+source from `VEHICLE_SPEED` to GPS/VSS. The dashboard has the same bug — see
+`ranger-dashboard/config.yaml` `rpm_to_kmh`.
+
+---
+
 ## EV / diagnostic signals openpilot does NOT model (expose out-of-band)
 
 openpilot's `carState` has no pack-voltage / SoC / motor-temp fields — that's

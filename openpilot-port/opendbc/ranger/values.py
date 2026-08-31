@@ -42,20 +42,8 @@ class CAR(Platforms):
   )
 
 
-# Fingerprint: openpilot IDs the car by the set of arbitration IDs seen on the
-# bus. These are the Hyper9 + MCU broadcast IDs from the DBCs. If openpilot
-# can't match a stock car it falls back here.
-FINGERPRINTS = {
-  CAR.RANGER_EV: [{
-    # Hyper9 X1 (bus 0) — 385=0x181, 386=0x182, 387=0x183, 388=0x184
-    385: 8, 386: 8, 387: 8, 388: 8,
-    # Thunderstruck MCU/BMS (bus 1) — 849=0x351, 853=0x355, 854=0x356
-    849: 8, 853: 6, 854: 6,
-  }],
-}
-
-# No firmware-version fingerprinting on this bus (no UDS/ISO-TP ECUs to query).
-FW_VERSIONS = {}
+# Fingerprints (arbitration-ID set) + FW_VERSIONS now live in fingerprints.py,
+# per the modern opendbc layout. values.py = platforms / specs / control limits.
 
 
 class CarControllerParams:
