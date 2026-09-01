@@ -1,0 +1,44 @@
+VERSION "1.0.0"
+
+NS_ :
+
+BS_:
+
+BU_: HYPER9 MCU OP
+
+CM_ "Ranger EV openpilot port DBC — 1986 Ford Ranger EV conversion.";
+CM_ "Drive-relevant subset of hyper9.dbc + thunderstruck_mcu.dbc, arranged for the openpilot carstate parser.";
+CM_ "Little-endian (CANopen). Hyper9 = bus 0, MCU/BMS = bus 1 in the port.";
+
+BO_ 385 HYPER9_STATUS: 8 HYPER9
+ SG_ VEHICLE_SPEED : 0|16@1- (0.1,0) [-3276.8|3276.7] "km/h" OP
+ SG_ BATTERY_SOC : 16|8@1+ (1,0) [0|100] "%" OP
+ SG_ SYSTEM_FLAGS : 24|16@1+ (1,0) [0|65535] "" OP
+ SG_ FAULT_CODE : 40|8@1+ (1,0) [0|150] "" OP
+
+BO_ 387 HYPER9_MOTOR: 8 HYPER9
+ SG_ MOTOR_RPM : 0|16@1- (1,0) [-32768|32767] "rpm" OP
+ SG_ MOTOR_TEMP : 16|8@1+ (1,-40) [-40|215] "degC" OP
+ SG_ INVERTER_TEMP : 24|8@1+ (1,-40) [-40|215] "degC" OP
+ SG_ THROTTLE_REQUEST : 32|8@1- (1,0) [-100|100] "%" OP
+ SG_ MOTOR_TORQUE : 40|16@1- (1,0) [-100|100] "%" OP
+
+BO_ 386 HYPER9_POWER: 8 HYPER9
+ SG_ DC_BUS_VOLTAGE : 0|16@1- (0.1,0) [-3276.8|3276.7] "V" OP
+ SG_ DC_BUS_CURRENT : 16|16@1- (0.1,0) [-3276.8|3276.7] "A" OP
+ SG_ MOTOR_CURRENT : 32|16@1- (0.1,0) [-3276.8|3276.7] "A" OP
+
+BO_ 854 MCU_BMS_STATUS: 8 MCU
+ SG_ PACK_VOLTAGE : 0|16@1+ (0.1,0) [0|600] "V" OP
+ SG_ PACK_CURRENT : 16|16@1- (0.1,0) [-3276.8|3276.7] "A" OP
+ SG_ PACK_TEMPERATURE : 32|16@1- (0.1,0) [-40|120] "degC" OP
+
+BO_ 853 MCU_BMS_SOC: 8 MCU
+ SG_ BATTERY_SOC : 0|8@1+ (1,0) [0|100] "%" OP
+
+CM_ SG_ 385 VEHICLE_SPEED "vEgo source. Signed km/h; port uses abs()/3.6 for m/s.";
+CM_ SG_ 385 SYSTEM_FLAGS "bit4=PARK_BRAKE, bit5=PEDAL_BRAKE, bit9=RUNNING. F/R bits (2/3) are frozen on this firmware — use signed MOTOR_RPM for gear.";
+CM_ SG_ 387 MOTOR_RPM "Signed. >20 forward, <-20 reverse, else neutral. Gear source of truth.";
+CM_ SG_ 387 THROTTLE_REQUEST "Driver throttle -100..100%; port clips to 0..100 for carState.gas.";
+
+VAL_ 385 FAULT_CODE 0 "Ready" 1 "Blocking" 2 "Stopping" 3 "Limiting" 4 "Warning" ;
