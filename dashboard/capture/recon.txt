@@ -1,0 +1,211 @@
+
+[1m=== HOST / OS ===[0m
+ranger
+Linux ranger 6.18.29+rpt-rpi-2712 #1 SMP PREEMPT Debian 1:6.18.29-1+rpt1 (2026-05-12) aarch64 GNU/Linux
+PRETTY_NAME="Debian GNU/Linux 13 (trixie)"
+VERSION_ID="13"
+VERSION="13 (trixie)"
+VERSION_CODENAME=trixie
+DEBIAN_VERSION_FULL=13.5
+ 12:14:57 up 5 min,  3 users,  load average: 0.41, 0.37, 0.18
+
+[1m=== CAN INTERFACES (ip link) ===[0m
+3: can0: <NOARP,ECHO> mtu 16 qdisc noop state DOWN mode DEFAULT group default qlen 10
+    link/can  promiscuity 0 allmulti 0 minmtu 16 maxmtu 16 
+    can state STOPPED restart-ms 0 
+	  mcp251x: tseg1 3..16 tseg2 2..8 sjw 1..4 brp 1..64 brp_inc 1
+	  clock 8000000 
+	  re-started bus-errors arbit-lost error-warn error-pass bus-off
+	  0          0          0          0          0          0         numtxqueues 1 numrxqueues 1 gso_max_size 65536 gso_max_segs 65535 tso_max_size 65536 tso_max_segs 65535 gro_max_size 65536 gso_ipv4_max_size 65536 gro_ipv4_max_size 65536 parentbus spi parentdev spi1.2 
+    RX:  bytes packets errors dropped  missed   mcast           
+             0       0      0       0       0       0 
+--
+4: can1: <NOARP,ECHO> mtu 16 qdisc noop state DOWN mode DEFAULT group default qlen 10
+    link/can  promiscuity 0 allmulti 0 minmtu 16 maxmtu 16 
+    can state STOPPED restart-ms 0 
+	  mcp251x: tseg1 3..16 tseg2 2..8 sjw 1..4 brp 1..64 brp_inc 1
+	  clock 8000000 
+	  re-started bus-errors arbit-lost error-warn error-pass bus-off
+	  0          0          0          0          0          0         numtxqueues 1 numrxqueues 1 gso_max_size 65536 gso_max_segs 65535 tso_max_size 65536 tso_max_segs 65535 gro_max_size 65536 gso_ipv4_max_size 65536 gro_ipv4_max_size 65536 parentbus spi parentdev spi1.1 
+    RX:  bytes packets errors dropped  missed   mcast           
+             0       0      0       0       0       0 
+-- current can0 bitrate/state --
+3: can0: <NOARP,ECHO> mtu 16 qdisc noop state DOWN mode DEFAULT group default qlen 10
+    link/can  promiscuity 0 allmulti 0 minmtu 16 maxmtu 16 
+    can state STOPPED restart-ms 0 
+	  mcp251x: tseg1 3..16 tseg2 2..8 sjw 1..4 brp 1..64 brp_inc 1
+	  clock 8000000 numtxqueues 1 numrxqueues 1 gso_max_size 65536 gso_max_segs 65535 tso_max_size 65536 tso_max_segs 65535 gro_max_size 65536 gso_ipv4_max_size 65536 gro_ipv4_max_size 65536 parentbus spi parentdev spi1.2 
+
+[1m=== CAN KERNEL MODULES / HAT (dmesg + lsmod) ===[0m
+can_raw                49152  1
+can                    49152  1 can_raw
+mcp251x                49152  0
+can_dev                81920  1 mcp251x
+[    4.461663] mcp251x spi1.2 can0: MCP2515 successfully initialized.
+[    4.475366] mcp251x spi1.1 can1: MCP2515 successfully initialized.
+
+[1m=== BOOT CONFIG (overlays = which CAN HAT) ===[0m
+--- /boot/firmware/config.txt ---
+dtparam=spi=on
+dtoverlay=vc4-kms-v3d
+# Disable compensation for displays with overscan
+disable_overscan=1
+dtoverlay=dwc2,dr_mode=host
+# Ranger Dashboard - 2-CH CAN HAT+
+dtoverlay=i2c0
+dtoverlay=spi1-3cs
+dtoverlay=mcp2515,spi1-1,oscillator=16000000,interrupt=22
+dtoverlay=mcp2515,spi1-2,oscillator=16000000,interrupt=13
+--- /boot/config.txt ---
+
+[1m=== ORIGINAL SOFTWARE — likely project dirs ===[0m
+total 96
+drwx------ 16 weston weston 4096 Jul  8 17:24 .
+drwxr-xr-x  3 root   root   4096 Apr 20 20:17 ..
+-rw-------  1 weston weston  507 May 23 17:47 .bash_history
+-rw-r--r--  1 weston weston  220 Apr 20 20:06 .bash_logout
+-rw-r--r--  1 weston weston 3523 Apr 20 20:06 .bashrc
+drwx------  6 weston weston 4096 Apr 20 20:23 .cache
+drwxrwxr-x 13 weston weston 4096 May 23 18:41 .config
+drwxr-xr-x  7 weston weston 4096 May 23 17:39 dashboard
+drwxrwxr-x  2 weston weston 4096 Apr 20 20:17 Desktop
+drwx------  3 weston docker 4096 May 23 17:40 .docker
+drwxr-xr-x  2 weston weston 4096 Apr 20 20:17 Documents
+drwxr-xr-x  2 weston weston 4096 Apr 20 20:17 Downloads
+drwx------  4 weston weston 4096 Apr 20 20:17 .local
+drwxr-xr-x  2 weston weston 4096 Apr 20 20:17 Music
+drwxr-xr-x  2 weston weston 4096 Apr 20 20:17 Pictures
+-rw-r--r--  1 weston weston  807 Apr 20 20:06 .profile
+drwxr-xr-x  2 weston weston 4096 Apr 20 20:17 Public
+drwx------  2 weston weston 4096 May 23 17:33 .ssh
+-rw-r--r--  1 weston weston    0 May 23 17:18 .sudo_as_admin_successful
+drwxr-xr-x  2 weston weston 4096 Apr 20 20:17 Templates
+drwxr-xr-x  2 weston weston 4096 Apr 20 20:17 Videos
+-rw-------  1 weston weston   51 Jul  8 17:24 .Xauthority
+-rw-------  1 weston weston 4066 Jul  9 12:12 .xsession-errors
+-rw-------  1 weston weston 4443 Jul  8 17:25 .xsession-errors.old
+-- searching for candidate projects (py/node/can) --
+/home/weston/dashboard/scripts/simulate_can.sh
+/home/weston/dashboard/src/can
+/home/weston/dashboard/src/__init__.py
+/home/weston/dashboard/src/main.py
+/home/weston/dashboard/src/config.py
+/home/weston/dashboard/tests/test_hyper9.py
+/home/weston/dashboard/tests/__init__.py
+/home/weston/dashboard/tests/test_vehicle_state.py
+/home/weston/dashboard/tests/conftest.py
+/home/weston/dashboard/tests/test_can_parser.py
+/home/weston/dashboard/tests/test_api.py
+
+[1m=== PYTHON CAN-RELATED PACKAGES ===[0m
+python-can not installed system-wide
+Flask                        3.1.1
+pygame                       2.6.1
+types-Flask-Cors             5.0
+types-Flask-Migrate          4.0
+types-Flask-SocketIO         5.4
+
+[1m=== AUTOSTART — systemd services (non-vendor) ===[0m
+  UNIT                          LOAD   ACTIVE SUB     DESCRIPTION
+  accounts-daemon.service       loaded active running Accounts Service
+  containerd.service            loaded active running containerd container runtime
+  docker.service                loaded active running Docker Application Container Engine
+  lightdm.service               loaded active running Light Display Manager
+  NetworkManager.service        loaded active running Network Manager
+  nfs-blkmap.service            loaded active running pNFS block layout mapping daemon
+  packagekit.service            loaded active running PackageKit Daemon
+  rpcbind.service               loaded active running RPC bind portmap service
+  tailscaled.service            loaded active running Tailscale node agent
+  udisks2.service               loaded active running Disk Manager
+  upower.service                loaded active running Daemon for power management
+
+Legend: LOAD   → Reflects whether the unit definition was properly loaded.
+        ACTIVE → The high-level unit activation state, i.e. generalization of SUB.
+        SUB    → The low-level unit activation state, values depend on unit type.
+
+25 loaded units listed.
+-- enabled custom services --
+UNIT FILE                          STATE   PRESET
+cups.path                          enabled enabled
+accounts-daemon.service            enabled enabled
+apparmor.service                   enabled enabled
+cloud-config.service               enabled enabled
+cloud-final.service                enabled enabled
+cloud-init-local.service           enabled enabled
+cloud-init-main.service            enabled enabled
+console-setup.service              enabled enabled
+containerd.service                 enabled enabled
+cups.service                       enabled enabled
+docker.service                     enabled enabled
+e2scrub_reap.service               enabled enabled
+glamor-test.service                enabled enabled
+keyboard-setup.service             enabled enabled
+lightdm.service                    enabled enabled
+NetworkManager-dispatcher.service  enabled enabled
+NetworkManager-wait-online.service enabled enabled
+NetworkManager.service             enabled enabled
+nfs-blkmap.service                 enabled enabled
+rp1-test.service                   enabled enabled
+rpcbind.service                    enabled enabled
+rpi-eeprom-update.service          enabled enabled
+tailscaled.service                 enabled enabled
+udisks2.service                    enabled enabled
+wayvnc-control.service             enabled enabled
+cloud-init-hotplugd.socket         enabled enabled
+cups.socket                        enabled enabled
+docker.socket                      enabled enabled
+rpcbind.socket                     enabled enabled
+nfs-client.target                  enabled enabled
+remote-fs.target                   enabled enabled
+apt-daily-upgrade.timer            enabled enabled
+apt-daily.timer                    enabled enabled
+dpkg-db-backup.timer               enabled enabled
+e2scrub_all.timer                  enabled enabled
+fstrim.timer                       enabled enabled
+logrotate.timer                    enabled enabled
+man-db.timer                       enabled enabled
+
+51 unit files listed.
+-- any unit mentioning can/ranger/dash/gauge --
+
+[1m=== AUTOSTART — cron / rc.local / autostart ===[0m
+/etc/xdg/autostart/:
+autotouch.desktop
+env-display.desktop
+gnome-keyring-pkcs11.desktop
+gnome-keyring-secrets.desktop
+gnome-keyring-ssh.desktop
+lxpolkit.desktop
+polkit-mate-authentication-agent-1.desktop
+pprompt.desktop
+pwrkey.desktop
+squeekboard.desktop
+xcompmgr.desktop
+xdg-user-dirs.desktop
+xwayauth.desktop
+
+/home/weston/.config/autostart/:
+dashboard-kiosk.desktop
+
+[1m=== LISTENING PORTS (already-served dashboard?) ===[0m
+State  Recv-Q Send-Q               Local Address:Port  Peer Address:PortProcess
+LISTEN 0      4096                       0.0.0.0:111        0.0.0.0:*          
+LISTEN 0      2048                       0.0.0.0:8088       0.0.0.0:*          
+LISTEN 0      4096                 <redacted-tailscale-ip>:64960      0.0.0.0:*          
+LISTEN 0      4096                          [::]:111           [::]:*          
+LISTEN 0      4096   [fd7a:115c:a1e0::9038:f850]:55163         [::]:*          
+
+[1m=== DISPLAY / KIOSK ===[0m
+DISPLAY=
+1282 /usr/lib/chromium/chromium --js-flags=--no-decommit-pooled-pages --force-renderer-accessibility --enable-remote-extensions --show-component-extension-options --enable-gpu-rasterization --no-default-browser-check --disable-pings --media-router=0 --enable-remote-extensions --load-extension --use-angle=gles --kiosk --noerrdialogs --disable-infobars --disable-translate --no-first-run --check-for-update-interval=31536000 --start-fullscreen --ozone-platform=wayland --password-store=basic http://localhost:8088
+1946 /usr/lib/chromium/chromium --type=zygote --no-zygote-sandbox --crashpad-handler-pid=0 --enable-crash-reporter=,built on Debian GNU/Linux 13 (trixie) --noerrdialogs --change-stack-guard-on-fork=enable
+1947 /usr/lib/chromium/chromium --type=zygote --crashpad-handler-pid=0 --enable-crash-reporter=,built on Debian GNU/Linux 13 (trixie) --noerrdialogs --change-stack-guard-on-fork=enable
+1952 /usr/lib/chromium/chromium --type=zygote --crashpad-handler-pid=0 --enable-crash-reporter=,built on Debian GNU/Linux 13 (trixie) --noerrdialogs --change-stack-guard-on-fork=enable
+1982 /usr/lib/chromium/chromium --type=gpu-process --enable-gpu-rasterization --ozone-platform=wayland --render-node-override=/dev/dri/card1 --use-angle=gles --crashpad-handler-pid=0 --enable-crash-reporter=,built on Debian GNU/Linux 13 (trixie) --noerrdialogs --change-stack-guard-on-fork=enable --gpu-preferences=UAAAAAAAAAAgAQAAAAAAAAAAAAAAAGAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAYAAAAAAAAABgAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAgAAAAAAAAA --shared-files --metrics-shmem-handle=4,i,10897372119723287223,3479228837428922207,262144 --field-trial-handle=3,i,16494933152435383742,1778576840269187518,262144 --disable-features=EyeDropper --variations-seed-version --pseudonymization-salt-handle=7,i,10766707000953694103,5229031385842726760,4 --trace-process-track-uuid=3190708988185955192
+1988 /usr/lib/chromium/chromium --type=utility --utility-sub-type=network.mojom.NetworkService --lang=en-GB --service-sandbox-type=none --use-angle=gles --render-node-override=/dev/dri/card1 --crashpad-handler-pid=0 --enable-crash-reporter=,built on Debian GNU/Linux 13 (trixie) --noerrdialogs --change-stack-guard-on-fork=enable --shared-files=v8_context_snapshot_data:100 --metrics-shmem-handle=4,i,7474587871966626365,12274555919080942356,524288 --field-trial-handle=3,i,16494933152435383742,1778576840269187518,262144 --disable-features=EyeDropper --variations-seed-version --pseudonymization-salt-handle=7,i,10766707000953694103,5229031385842726760,4 --trace-process-track-uuid=3190708989122997041
+1997 /usr/lib/chromium/chromium --type=utility --utility-sub-type=storage.mojom.StorageService --lang=en-GB --service-sandbox-type=utility --use-angle=gles --render-node-override=/dev/dri/card1 --crashpad-handler-pid=0 --enable-crash-reporter=,built on Debian GNU/Linux 13 (trixie) --noerrdialogs --change-stack-guard-on-fork=enable --shared-files=v8_context_snapshot_data:100 --metrics-shmem-handle=4,i,16010405512976359108,10154628862121564105,524288 --field-trial-handle=3,i,16494933152435383742,1778576840269187518,262144 --disable-features=EyeDropper --variations-seed-version --pseudonymization-salt-handle=7,i,10766707000953694103,5229031385842726760,4 --trace-process-track-uuid=3190708990060038890
+2053 /usr/lib/chromium/chromium --type=renderer --crashpad-handler-pid=0 --enable-crash-reporter=,built on Debian GNU/Linux 13 (trixie) --noerrdialogs --change-stack-guard-on-fork=enable --js-flags=--no-decommit-pooled-pages --ozone-platform=wayland --lang=en-GB --num-raster-threads=2 --enable-main-frame-before-activation --renderer-client-id=6 --time-ticks-at-unix-epoch=-1783545831499506 --launch-time-ticks=19147257 --shared-files=v8_context_snapshot_data:100 --metrics-shmem-handle=4,i,6563904103741923336,13940314719100267933,2097152 --field-trial-handle=3,i,16494933152435383742,1778576840269187518,262144 --disable-features=EyeDropper --variations-seed-version --pseudonymization-salt-handle=7,i,10766707000953694103,5229031385842726760,4 --trace-process-track-uuid=3190708991934122588
+2054 /usr/lib/chromium/chromium --type=renderer --crashpad-handler-pid=0 --enable-crash-reporter=,built on Debian GNU/Linux 13 (trixie) --noerrdialogs --change-stack-guard-on-fork=enable --js-flags=--no-decommit-pooled-pages --ozone-platform=wayland --lang=en-GB --num-raster-threads=2 --enable-main-frame-before-activation --renderer-client-id=5 --time-ticks-at-unix-epoch=-1783545831499506 --launch-time-ticks=19151172 --shared-files=v8_context_snapshot_data:100 --metrics-shmem-handle=4,i,9784850540825827239,14027403950463123453,2097152 --field-trial-handle=3,i,16494933152435383742,1778576840269187518,262144 --disable-features=EyeDropper --variations-seed-version --pseudonymization-salt-handle=7,i,10766707000953694103,5229031385842726760,4 --trace-process-track-uuid=3190708990997080739
+2072 /usr/lib/chromium/chromium --type=renderer --crashpad-handler-pid=0 --enable-crash-reporter=,built on Debian GNU/Linux 13 (trixie) --noerrdialogs --change-stack-guard-on-fork=enable --js-flags=--no-decommit-pooled-pages --ozone-platform=wayland --lang=en-GB --num-raster-threads=2 --enable-main-frame-before-activation --renderer-client-id=7 --time-ticks-at-unix-epoch=-1783545831499506 --launch-time-ticks=19488699 --shared-files=v8_context_snapshot_data:100 --metrics-shmem-handle=4,i,11797633481335408000,14959158396013661610,2097152 --field-trial-handle=3,i,16494933152435383742,1778576840269187518,262144 --disable-features=EyeDropper --variations-seed-version --pseudonymization-salt-handle=7,i,10766707000953694103,5229031385842726760,4 --trace-process-track-uuid=3190708992871164437
+
+[1m=== GIT REPOS on the Pi ===[0m
